@@ -1,0 +1,38 @@
+{
+  "Lin": {
+    "user_id": "Lin",
+    "name": "Lin",
+    "password": "Lin",
+    "role": "user",
+    "borrowed_books": [
+      "b001",
+      "b001"
+    ]
+  },
+  "0": {
+    "user_id": "0",
+    "name": "0",
+    "password": "0",
+    "role": "user",
+    "borrowed_books": []
+  },
+  "a001": {
+    "user_id": "a001",
+    "name": "Librarian",
+    "password": "adminpass",
+    "role": "admin"
+  },
+  "Lin Han": {
+    "user_id": "Lin Han",
+    "name": "Lin Han",
+    "password": "Lin Han",
+    "role": "user",
+    "borrowed_books": []
+  },
+  "123": {
+    "user_id": "123",
+    "name": "123",
+    "password": "123",
+    "role": "admin"
+  }
+}
