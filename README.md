@@ -13,7 +13,7 @@ A Python command-line application for managing a small library catalog, customer
 
 ## Run locally
 
-Requires Python 3.9 or later. No third-party packages are required.
+Requires Python 3.9 or later. The application has no third-party runtime dependencies.
 
 ```bash
 python main.py
@@ -27,7 +27,9 @@ On first launch, create an initial staff account. After signing in, staff can ad
 - `book.py`: book inventory model
 - `user.py`: customer and staff actions
 - `data_handler.py`: local JSON persistence and damage-report logging
-- `test_system (1).py`: original course test file (imports still need alignment with the current flat layout)
+- `test_system.py`: tests for borrowing, availability, duplicate loans, and damage reports
+
+Run the tests with `python -m pytest` after installing pytest.
 
 ## Data and scope
 
