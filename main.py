@@ -5,7 +5,7 @@ import hmac
 import secrets
 
 from book import Book
-from data_handler import (load_books, load_users, log_damage, save_books, save_users)
+from data_handler import load_books, load_users, log_damage, save_books, save_users
 from user import Admin, User
 
 
@@ -24,16 +24,16 @@ def verify_password(password: str, stored: str) -> bool:
         return False
 
 
-def create_account(users: dict, role: str) -> None:
+def create_account(users: dict, role: str) -> bool:
     user_id = input("Choose a user ID: ").strip()
     if not user_id or user_id in users:
         print("Enter a non-empty, unused user ID.")
-        return
+        return False
     name = input("Name: ").strip()
     password = input("Set a password (at least 8 characters): ")
     if not name or len(password) < 8:
         print("Name is required and the password must have at least 8 characters.")
-        return
+        return False
     users[user_id] = {
         "user_id": user_id,
         "name": name,
@@ -43,14 +43,15 @@ def create_account(users: dict, role: str) -> None:
     }
     save_users(users)
     print(f"{role.title()} account created.")
+    return True
 
 
 def main() -> None:
     books = load_books()
     users = load_users()
 
-    # The first account is staff so the system can be administered on first launch.
-    if not any(info.get("role") == "admin" for info in users.values()):
+    # Create the first staff account on first launch.
+    while not any(info.get("role") == "admin" for info in users.values()):
         print("First launch: create the initial staff account.")
         create_account(users, "admin")
 
@@ -75,19 +76,14 @@ def main() -> None:
             continue
 
         is_admin = record.get("role") == "admin"
-        user = (Admin(user_id, record["name"], password) if is_admin
-                else User(user_id, record["name"], password))
+        user = Admin(user_id, record["name"], password) if is_admin else User(user_id, record["name"], password)
         user.borrowed_books = record.get("borrowed_books", [])
 
         while True:
             print("\n1. View catalog")
-            if is_admin:
-                print("2. Add book\n3. Remove book\n4. View customer borrowing status")
-            else:
-                print("2. Borrow a book\n3. Return a book\n4. Report damage")
+            print("2. Add book\n3. Remove book\n4. View customer borrowing status" if is_admin else "2. Borrow a book\n3. Return a book\n4. Report damage")
             print("0. Log out")
             action = input(">> ").strip()
-
             if action == "0":
                 save_books(books)
                 break
@@ -119,19 +115,19 @@ def main() -> None:
                 book = books.get(book_id)
                 if not book:
                     print("Book not found.")
-                elif book.borrowed:
+                elif not Admin.remove_book(user, books, book_id):
                     print("Return all borrowed copies before removing this title.")
                 else:
-                    del books[book_id]
                     save_books(books)
                     print("Book removed.")
             elif action == "4" and is_admin:
                 for customer_id, info in users.items():
                     if info.get("role") == "user":
-                        print(f"{customer_id} — {info["name"]}: {info.get("borrowed_books", [])}")
+                        name = info.get("name", "(no name)")
+                        borrowed = info.get("borrowed_books", [])
+                        print(customer_id + " — " + name + " | Borrowed: " + str(borrowed))
             elif action == "2" and not is_admin:
-                book_id = input("Book ID to borrow: ").strip()
-                book = books.get(book_id)
+                book = books.get(input("Book ID to borrow: ").strip())
                 if book and user.borrow(book):
                     record["borrowed_books"] = user.borrowed_books
                     save_users(users)
@@ -140,8 +136,7 @@ def main() -> None:
                 else:
                     print("Borrow failed. Check the ID, availability, and your current loans.")
             elif action == "3" and not is_admin:
-                book_id = input("Book ID to return: ").strip()
-                book = books.get(book_id)
+                book = books.get(input("Book ID to return: ").strip())
                 if book and user.return_book(book):
                     record["borrowed_books"] = user.borrowed_books
                     save_users(users)
@@ -153,8 +148,7 @@ def main() -> None:
                 book_id = input("Book ID: ").strip()
                 message = input("Describe the damage: ").strip()
                 book = books.get(book_id)
-                if book and message:
-                    user.report_damage(book, message)
+                if book and user.report_damage(book, message):
                     log_damage(f"{user.name} reported damage to {book_id}: {message}")
                     save_books(books)
                     print("Damage report recorded.")
