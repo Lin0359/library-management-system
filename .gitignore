@@ -1,0 +1,9 @@
+# Local runtime data and secrets
+data/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
