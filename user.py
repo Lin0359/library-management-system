@@ -1,46 +1,59 @@
-from models.book import Book
+"""User roles and library actions."""
+
+from book import Book
+
 
 class Person:
-    def __init__(self, user_id, name, password):
+    def __init__(self, user_id: str, name: str, password: str = ""):
         self.user_id = user_id
         self.name = name
+        # Authentication hashes are stored by the application, not this domain model.
         self.password = password
 
+
 class User(Person):
-    def __init__(self, user_id, name, password):
+    def __init__(self, user_id: str, name: str, password: str = ""):
         super().__init__(user_id, name, password)
         self.borrowed_books = []
 
-    def borrow(self, book: Book):
-        if book.copies - book.borrowed > 0:
-            self.borrowed_books.append(book.book_id)
-            book.borrowed += 1
-            return True
-        return False
+    def borrow(self, book: Book) -> bool:
+        if book.available_copies < 1 or book.book_id in self.borrowed_books:
+            return False
+        self.borrowed_books.append(book.book_id)
+        book.borrowed += 1
+        return True
 
-    def return_book(self, book: Book):
-        if book.book_id in self.borrowed_books:
-            self.borrowed_books.remove(book.book_id)
-            book.borrowed -= 1
-            return True
-        return False
+    def return_book(self, book: Book) -> bool:
+        if book.book_id not in self.borrowed_books or book.borrowed < 1:
+            return False
+        self.borrowed_books.remove(book.book_id)
+        book.borrowed -= 1
+        return True
 
-    def report_damage(self, book: Book, message: str):
-        book.damage_reports.append(f"{self.name} reports: {message}")
+    def report_damage(self, book: Book, message: str) -> bool:
+        message = message.strip()
+        if not message:
+            return False
+        book.damage_reports.append(f"{self.name}: {message}")
+        return True
+
 
 class Admin(Person):
-    def __init__(self, user_id, name, password):
-        super().__init__(user_id, name, password)
-
-    def add_book(self, books_dict, book: Book):
+    def add_book(self, books_dict: dict, book: Book) -> bool:
+        if book.book_id in books_dict:
+            return False
         books_dict[book.book_id] = book
+        return True
 
-    def remove_book(self, books_dict, book_id):
-        if book_id in books_dict:
-            del books_dict[book_id]
+    def remove_book(self, books_dict: dict, book_id: str) -> bool:
+        book = books_dict.get(book_id)
+        if book is None or book.borrowed:
+            return False
+        del books_dict[book_id]
+        return True
 
-    def view_users(self, users_data):
-        print("\nRegistered Users and Their Borrowed Books:")
-        for uid, info in users_data.items():
-            if info["role"] == "user":
-                print(f"{uid} - {info['name']} | Borrowed: {info.get('borrowed_books', [])}")
+    def view_users(self, users_data: dict) -> None:
+        print("\nRegistered customers and borrowed books:")
+        for user_id, info in users_data.items():
+            if info.get("role") == "user":
+                print(f"{user_id} - {info.get("name", "(no name)")} | Borrowed: {info.get("borrowed_books", [])}")
