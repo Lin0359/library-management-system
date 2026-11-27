@@ -56,4 +56,6 @@ class Admin(Person):
         print("\nRegistered customers and borrowed books:")
         for user_id, info in users_data.items():
             if info.get("role") == "user":
-                print(f"{user_id} - {info.get("name", "(no name)")} | Borrowed: {info.get("borrowed_books", [])}")
+                borrowed = info.get("borrowed_books", [])
+                name = info.get("name", "(no name)")
+                print(user_id + " - " + name + " | Borrowed: " + str(borrowed))
