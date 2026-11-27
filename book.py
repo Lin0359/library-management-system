@@ -1,15 +1,22 @@
-import json
+"""Book inventory model."""
+
 
 class Book:
     def __init__(self, book_id, title, author, year, category, copies=1):
-        self.book_id = book_id
-        self.title = title
-        self.author = author
-        self.year = year
-        self.category = category
-        self.copies = copies
+        if copies < 0:
+            raise ValueError("copies cannot be negative")
+        self.book_id = str(book_id)
+        self.title = str(title)
+        self.author = str(author)
+        self.year = str(year)
+        self.category = str(category)
+        self.copies = int(copies)
         self.borrowed = 0
         self.damage_reports = []
+
+    @property
+    def available_copies(self):
+        return self.copies - self.borrowed
 
     def to_dict(self):
         return {
@@ -20,19 +27,21 @@ class Book:
             "category": self.category,
             "copies": self.copies,
             "borrowed": self.borrowed,
-            "damage_reports": self.damage_reports
+            "damage_reports": self.damage_reports,
         }
 
-    @staticmethod
-    def from_dict(data):
-        book = Book(
+    @classmethod
+    def from_dict(cls, data):
+        book = cls(
             book_id=data["book_id"],
             title=data["title"],
             author=data["author"],
             year=data["year"],
             category=data["category"],
-            copies=data["copies"]
+            copies=int(data["copies"]),
         )
-        book.borrowed = data.get("borrowed", 0)
-        book.damage_reports = data.get("damage_reports", [])
+        book.borrowed = int(data.get("borrowed", 0))
+        book.damage_reports = list(data.get("damage_reports", []))
+        if not 0 <= book.borrowed <= book.copies:
+            raise ValueError(f"Invalid inventory count for book {book.book_id}")
         return book
